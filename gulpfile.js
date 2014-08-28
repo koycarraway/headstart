@@ -228,7 +228,7 @@ gulp.task('clean-rev', function (cb) {
 gulp.task('sass-main', ['sass-ie'], function (cb) {
 
 	verbose(chalk.grey('☞  Running task "sass-main"'));
-	
+
 	// Continuous watch never ends, so end it manually
 	if (lrStarted) {
 		cb(null);
@@ -248,10 +248,17 @@ gulp.task('sass-main', ['sass-ie'], function (cb) {
 				name: 'SCSS-MAIN',
 				silent: true
 			})
-				.pipe(plugins.plumber())
 				.pipe(plugins.sassGraph(['assets/sass']))
 		)
+		// .pipe(plugins.plumber(function (err) {
+		// 	// Do nothing, just adding plumber will make
+		// 	// gulp-ruby-sass output the error
+		// }))
+		.pipe(plugins.plumber({
+      errorHandler: plugins.notify.onError("Error: <%= error.message %>")
+    }))
 		.pipe(plugins.rubySass({ style: (isProduction ? 'compressed' : 'nested') }))
+		//.on('error', function (err) { console.log('an error', err); })
 		.pipe(plugins.if(config.combineMediaQueries, plugins.combineMediaQueries()))
 		.pipe(plugins.autoprefixer('last 2 version', 'safari 5', 'ie 8', 'ie 9', 'opera 12.1', 'ios 6', 'android 4'))
 		.pipe(plugins.if(config.revisionCaching, plugins.rev()))
@@ -269,9 +276,9 @@ gulp.task('sass-main', ['sass-ie'], function (cb) {
 });
 
 gulp.task('sass-ie', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "sass-ie"'));
-	
+
 	// Continuous watch never ends, so end it manually
 	if (lrStarted) {
 		cb(null);
@@ -303,13 +310,13 @@ gulp.task('sass-ie', function (cb) {
 
 // JSHint options:	http://www.jshint.com/docs/options/
 gulp.task('hint-scripts', function (cb) {
-	
+
 	// Quit this task if hinting isn't turned on
 	if (!config.hint) {
 		cb(null);
 		return;
 	}
-	
+
 	verbose(chalk.grey('☞  Running task "hint-scripts"'));
 
 	// Hint all non-lib js files and exclude _ prefixed files
@@ -325,7 +332,7 @@ gulp.task('hint-scripts', function (cb) {
 });
 
 gulp.task('scripts-main', ['hint-scripts', 'scripts-view'], function () {
-	
+
 	verbose(chalk.grey('☞  Running task "scripts-main"'));
 
 	// Process .js files
@@ -356,7 +363,7 @@ gulp.task('scripts-main', ['hint-scripts', 'scripts-view'], function () {
 });
 
 gulp.task('scripts-view', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "scripts-view"'));
 
 	return gulp.src('assets/js/view-*.js')
@@ -370,7 +377,7 @@ gulp.task('scripts-view', function (cb) {
 });
 
 gulp.task('scripts-ie', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "scripts-ie"'));
 
 	// Process .js files
@@ -406,7 +413,7 @@ gulp.task('scripts-ie', function (cb) {
 //
 
 gulp.task('images', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "images"'));
 
 	// Make a copy of the favicon.png, and make a .ico version for IE
@@ -443,7 +450,7 @@ gulp.task('images', function (cb) {
 //
 
 gulp.task('other', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "other"'));
 
 	// Make sure other files and folders are copied over
@@ -464,9 +471,9 @@ gulp.task('other', function (cb) {
 
 // MISC -----------------------------------------------------------------------
 //
- 
+
 gulp.task('misc', function (cb) {
-	
+
 	// In --production mode, copy over all the other stuff
 	if (isProduction) {
 		verbose(chalk.grey('☞  Running task "misc"'));
@@ -487,9 +494,9 @@ gulp.task('misc', function (cb) {
 
 // TEMPLATES ------------------------------------------------------------------
 //
- 
+
 gulp.task('templates', ['clean-rev'], function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "templates"'));
 
 	// If assebly is off, export all folders and files
@@ -517,7 +524,7 @@ gulp.task('templates', ['clean-rev'], function (cb) {
 
 				// Make a collection of file globs
 				// Production will get 1 file only
-				// Development gets raw base files 
+				// Development gets raw base files
 				injectItems = isProduction ?
 					[
 						config.export_assets + '/assets/js/core-libs*.min.js',
@@ -603,11 +610,11 @@ gulp.task('templates', ['clean-rev'], function (cb) {
 });
 
 // UNCSS ----------------------------------------------------------------------
-// 
+//
 // Clean up unused CSS styles
 
 gulp.task('uncss-main', function (cb) {
-	
+
 	// Quit this task if this isn't production mode
 	if(!isProduction || !config.useUncss) {
 		cb(null);
@@ -635,7 +642,7 @@ gulp.task('uncss-main', function (cb) {
 });
 
 gulp.task('uncss-view', function (cb) {
-	
+
 	// Quit this task if this isn't production mode
 	if(!isProduction || !config.useUncss) {
 		cb(null);
@@ -698,7 +705,7 @@ gulp.task('uncss-view', function (cb) {
 //
 
 gulp.task('manifest', function (cb) {
-	
+
 	// Quit this task if the revisions aren't turned on
 	if (!config.revisionCaching) {
 		cb(null);
@@ -722,7 +729,7 @@ gulp.task('manifest', function (cb) {
 //
 
 gulp.task('server', ['browsersync'], function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "server"'));
 
 	// JS specific watches to also detect removing/adding of files
@@ -764,7 +771,7 @@ gulp.task('server', ['browsersync'], function (cb) {
 });
 
 gulp.task('browsersync', function (cb) {
-	
+
 	verbose(chalk.grey('☞  Running task "browsersync"'));
 
 	// Serve files and connect browsers
@@ -894,12 +901,6 @@ gulp.task('psi', ['tunnel'], function (cb) {
 		}
 
 		cb(null);
-	});
-
-	// Since psi throw's the threshold error,
-	// we have to listen for it process-wide (bad!) — ONCE
-	process.once('uncaughtException', function (err) {
-		console.log(chalk.red(err));
 	});
 });
 
@@ -1044,14 +1045,26 @@ function verbose (msg) {
 	if(isVerbose) console.log(msg);
 }
 
-// Shhhhh gulp-utils, only dreams now
+// Mute all console logs outside of --verbose (gulp-util)
+// except for manually approved ones
 var cl = console.log;
 console.log = function () {
-    var args = Array.prototype.slice.call(arguments);
-    if (args.length && !isVerbose) {
-        if (/^\[.*\]$/.test(args[0])){
-            return;
-        }
-    }
-    return cl.apply(console, args);
+	var args = Array.prototype.slice.call(arguments);
+	if (args.length && !isVerbose) {
+		// Match the gulp-util logging pattern
+		// but allow gulp-ruby-sass
+		if (/^\[.*\]$/.test(args[0]) && !/^\[gulp-ruby-sass\]$/.test(args[1])) {
+			return;
+		}
+	}
+	return cl.apply(console, args);
 };
+
+// Same, but for console warns (gulp-sass-graph)
+var cw = console.warn;
+console.warn = function () {
+	if(!isVerbose) {
+		return;
+	}
+	return cw.apply(console, args);
+}
